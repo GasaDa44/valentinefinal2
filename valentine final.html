@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Valentine's Game</title>
+  <style>
+    body {
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      text-align: center;
+      background-color: #ffe6f0;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 {
+      margin-top: 40px;
+      color: #ff3399;
+      font-size: 3em;
+    }
+
+    .button {
+      padding: 12px 25px;
+      margin: 10px;
+      font-size: 1.2em;
+      background-color: #ff66b2;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-gap: 10px;
+      justify-content: center;
+      margin: 30px auto;
+    }
+
+    .cell {
+      width: 100px;
+      height: 100px;
+      font-size: 2em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: white;
+      border: 2px solid #ff99cc;
+      cursor: pointer;
+      border-radius: 10px;
+    }
+
+    #winner, #rps-winner, #final-scene {
+      font-size: 2em;
+      margin-top: 20px;
+      color: #cc0066;
+    }
+
+    @keyframes fire {
+      0% { background-color: black; color: red; }
+      50% { background-color: darkred; color: orange; }
+      100% { background-color: red; color: yellow; }
+    }
+
+    .fire-mode {
+      animation: fire 0.3s infinite alternate;
+      font-size: 2em;
+      font-weight: bold;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    #hearts {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: -1;
+    }
+
+    .heart {
+      position: absolute;
+      color: #ff69b4;
+      font-size: 2rem;
+      animation: floatUp 5s linear infinite;
+    }
+
+    @keyframes floatUp {
+      from { transform: translateY(100vh); }
+      to { transform: translateY(-10vh); }
+    }
+  </style>
+</head>
+<body>
+  <div id="hearts"></div>
+
+  <audio id="bg-music" autoplay loop>
+    <source src="https://www.bensound.com/bensound-music/bensound-romantic.mp3" type="audio/mpeg">
+  </audio>
+
+  <h1>Will You Be My Valentine?</h1>
+
+  <div id="first-choice">
+    <button class="button" onclick="sayYes()">Yes 💖</button>
+    <button class="button" onclick="askAgain()">No 😢</button>
+  </div>
+
+  <div id="yes-response" class="hidden">
+    <h2>Yay!! 🥰 Let's play a game to seal the deal!</h2>
+    <button class="button" onclick="startTicTacToe()">Start Game</button>
+  </div>
+
+  <div id="are-you-sure" class="hidden">
+    <h2>Are you sure?? 😢</h2>
+    <button class="button" onclick="goBack()">Wait... Go Back</button>
+    <button class="button" onclick="startTicTacToe()">Yes, I'm sure 💔</button>
+  </div>
+
+  <div id="game-section" class="hidden">
+    <h2>🎮 Tic Tac Toe: You (X) vs AI (O)</h2>
+    <div id="board"></div>
+    <div id="winner"></div>
+    <button class="button hidden" id="restart-ttt" onclick="startTicTacToe()">Restart Tic-Tac-Toe</button>
+  </div>
+
+  <div id="rps-section" class="hidden">
+    <h2>🪨📄✂️ Rock Paper Scissors: Best of 3</h2>
+    <button class="button" onclick="rpsPlay('rock')">Rock</button>
+    <button class="button" onclick="rpsPlay('paper')">Paper</button>
+    <button class="button" onclick="rpsPlay('scissors')">Scissors</button>
+    <div id="rps-winner"></div>
+    <button class="button hidden" id="restart-rps" onclick="startRPS()">Restart RPS</button>
+  </div>
+
+  <div id="confirm-love" class="hidden">
+    <h2>Are you SURE you don't want to be my Valentine? 💔</h2>
+    <button class="button" onclick="finalScene()">Okay... Let's Be Valentines 💝</button>
+    <button class="button" onclick="closePage()">Yes, I'm Sure 💔</button>
+  </div>
+
+  <div id="final-scene" class="hidden">
+    <h2>💘 It's Official! You're My Valentine 💘</h2>
+    <p>Forever and always. ❤️💞</p>
+  </div>
+
+  <footer>By Esami Gasa ❤️</footer>
+
+  <script>
+    let board = ["", "", "", "", "", "", "", "", ""];
+    let gameOver = false;
+    let rpsPlayerScore = 0, rpsAiScore = 0;
+
+    function sayYes() {
+      document.getElementById("first-choice").classList.add("hidden");
+      document.getElementById("yes-response").classList.remove("hidden");
+    }
+
+    function askAgain() {
+      document.getElementById("first-choice").classList.add("hidden");
+      document.getElementById("are-you-sure").classList.remove("hidden");
+    }
+
+    function goBack() {
+      document.getElementById("are-you-sure").classList.add("hidden");
+      document.getElementById("first-choice").classList.remove("hidden");
+    }
+
+    function startTicTacToe() {
+      document.getElementById("are-you-sure").classList.add("hidden");
+      document.getElementById("yes-response").classList.add("hidden");
+      document.getElementById("game-section").classList.remove("hidden");
+      document.getElementById("restart-ttt").classList.add("hidden");
+      board = ["", "", "", "", "", "", "", "", ""];
+      gameOver = false;
+      document.getElementById("winner").innerHTML = "";
+      document.body.classList.remove("fire-mode");
+      renderBoard();
+    }
+
+    function renderBoard() {
+      const boardElement = document.getElementById("board");
+      boardElement.innerHTML = "";
+      board.forEach((cell, index) => {
+        const cellDiv = document.createElement("div");
+        cellDiv.classList.add("cell");
+        cellDiv.innerText = cell;
+        cellDiv.addEventListener("click", () => playerMove(index));
+        boardElement.appendChild(cellDiv);
+      });
+    }
+
+    function playerMove(index) {
+      if (board[index] === "" && !gameOver) {
+        board[index] = "X";
+        renderBoard();
+        if (!checkWinner("X")) {
+          setTimeout(aiMove, 300);
+        }
+      }
+    }
+
+    function aiMove() {
+      if (gameOver) return;
+      const empty = board.map((v, i) => v === "" ? i : null).filter(v => v !== null);
+      const rand = empty[Math.floor(Math.random() * empty.length)];
+      board[rand] = "O";
+      renderBoard();
+      checkWinner("O");
+    }
+
+    function checkWinner(player) {
+      const winPatterns = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+      ];
+
+      for (let pattern of winPatterns) {
+        const [a, b, c] = pattern;
+        if (board[a] === player && board[b] === player && board[c] === player) {
+          gameOver = true;
+          const winnerText = document.getElementById("winner");
+          if (player === "O") {
+            winnerText.innerHTML = "🎉 AI wins! Try again!";
+          } else {
+            document.getElementById("restart-ttt").classList.remove("hidden");
+            winnerText.innerHTML = "🔥 You won! Now let's play Rock Paper Scissors!";
+            setTimeout(() => startRPS(), 2000);
+          }
+          return true;
+        }
+      }
+
+      if (!board.includes("")) {
+        gameOver = true;
+        document.body.classList.add("fire-mode");
+        document.getElementById("winner").innerHTML = "🔥 It's a draw! Restart to try again.";
+        document.getElementById("restart-ttt").classList.remove("hidden");
+        return true;
+      }
+
+      return false;
+    }
+
+    function startRPS() {
+      rpsPlayerScore = 0;
+      rpsAiScore = 0;
+      document.getElementById("game-section").classList.add("hidden");
+      document.getElementById("rps-section").classList.remove("hidden");
+      document.getElementById("rps-winner").innerHTML = "";
+      document.getElementById("restart-rps").classList.add("hidden");
+    }
+
+    function rpsPlay(playerChoice) {
+      const choices = ["rock", "paper", "scissors"];
+      const aiChoice = choices[Math.floor(Math.random() * 3)];
+      if (playerChoice === aiChoice) {
+        document.getElementById("rps-winner").innerHTML = `Draw! Both chose ${playerChoice}`;
+      } else if (
+        (playerChoice === "rock" && aiChoice === "scissors") ||
+        (playerChoice === "paper" && aiChoice === "rock") ||
+        (playerChoice === "scissors" && aiChoice === "paper")
+      ) {
+        rpsPlayerScore++;
+        document.getElementById("rps-winner").innerHTML = `You won this round!`;
+      } else {
+        rpsAiScore++;
+        document.getElementById("rps-winner").innerHTML = `AI won this round!`;
+      }
+
+      if (rpsPlayerScore === 2) {
+        document.getElementById("rps-winner").innerHTML = "🎉 You win!";
+        document.getElementById("confirm-love").classList.remove("hidden");
+        document.getElementById("rps-section").classList.add("hidden");
+      } else if (rpsAiScore === 2) {
+        document.getElementById("rps-winner").innerHTML = "😢 AI wins! Try again.";
+        document.getElementById("restart-rps").classList.remove("hidden");
+      }
+    }
+
+    function finalScene() {
+      document.getElementById("confirm-love").classList.add("hidden");
+      document.getElementById("final-scene").classList.remove("hidden");
+    }
+
+    function closePage() {
+      window.close();
+    }
+
+    // Floating hearts background
+    setInterval(() => {
+      const heart = document.createElement('div');
+      heart.classList.add('heart');
+      heart.style.left = Math.random() * 100 + 'vw';
+      heart.style.top = '100vh';
+      heart.innerText = '❤️';
+      document.getElementById('hearts').appendChild(heart);
+      setTimeout(() => heart.remove(), 5000);
+    }, 300);
+  </script>
+</body>
+</html>
+
